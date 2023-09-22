@@ -1,57 +1,38 @@
 import express from 'express';
-import axios from 'axios';
 import dotenv from 'dotenv';
-import { getInvoices } from './paypal.js';
-import { searchTweets } from './twitter.js';
-
-/*
- step 1: install the necessary dependencies by running 'npm install' in the integrated terminal
- step 2: adjust the base variable to be your api endpoint for generating a token
- step 3: ensure .env file in the left sidebar contains valid credentials
- step 4: start server (app) by running 'npm start' in the integrated terminal
- step 5: observe the terminal
-
-
-
- */
+import generateAccessToken from './generateToken.js';
+import getInvoices from './service.js';
 
 dotenv.config();
 const app = express();
 
-//base url for api endpoint
-const base = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
+// Run generateAccessToken on server start and every x milliseconds
+const tokenRefreshTime = 10000; // Adjust this time as needed (10000ms = 10s)
+setInterval(generateAccessToken, tokenRefreshTime);
 
-// token number tracker
-let num = 1;
+let accessToken = ''; // Initial token generation
 
-// generate token using CLIENT_ID / CLIENT_SECURITY in .env
-async function generateAccessToken() {
-  let accessToken = '';
-  const res = await axios({
-    url: base,
-    method: 'post',
-    data: 'grant_type=client_credentials',
-    auth: {
-      username: process.env.USERNAME,
-      password: process.env.PASSWORD,
-    },
-  });
+// route to fetch invoices
+app.get('/invoices', async (req, res) => {
+  try {
+    // if accessToken is empty generate a new one
+    if (!accessToken) {
+      accessToken = await generateAccessToken();
+    }
 
-  //store the access token
-  accessToken = res.data.access_token;
+    // Use the access token to fetch invoices
+    const invoices = getInvoices(accessToken);
 
-  console.log(`token-${num}: ${accessToken} `);
-  num += 1;
+    // Send the retrieved invoices as JSON response
 
-  // get invoices from paypal.js
-  getInvoices(accessToken);
-}
+    res.send('<h1>invoices in console</h1>');
+    res.json(invoices);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch invoices' });
+  }
+});
 
-//Run generateAccessToken every x milliseconds
-//10000ms = 10seconds, 5000ms = 5seconds, 1000ms = 1second...
-let x = 5000;
-setInterval(searchTweets, x);
-
-app.listen(3000, () => {
-  console.log('listening on port 3000');
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
 });
