@@ -7,10 +7,10 @@ dotenv.config();
 const app = express();
 
 // Run generateAccessToken on server start and every x milliseconds
-const tokenRefreshTime = 10000; // Adjust this time as needed (10000ms = 10s)
+const tokenRefreshTime = 10000; // Adjust this time as needed (1000ms = 1s)
 setInterval(generateAccessToken, tokenRefreshTime);
 
-let accessToken = ''; // Initial token generation
+let accessToken = '';
 
 // route to fetch invoices
 app.get('/invoices', async (req, res) => {
@@ -21,12 +21,10 @@ app.get('/invoices', async (req, res) => {
     }
 
     // Use the access token to fetch invoices
-    const invoices = getInvoices(accessToken);
+    const invoices = await getInvoices(accessToken);
 
     // Send the retrieved invoices as JSON response
-
-    res.send('<h1>invoices in console</h1>');
-    res.json(invoices);
+    res.json({ invoices });
   } catch (error) {
     res.status(500).json({ error: 'Failed to fetch invoices' });
   }

@@ -1,4 +1,3 @@
-import axios from 'axios';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -6,21 +5,27 @@ dotenv.config();
 const base = 'https://api-m.sandbox.paypal.com';
 
 //fetch invoices
-const getInvoices = (accessToken) => {
-  axios
-    .get(base + '/v1/invoicing/invoices', {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${accessToken}`,
-      },
-    })
+async function getInvoices(accessToken) {
+  const endpoint = base + '/v1/invoicing/invoices';
+
+  return fetch(endpoint, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+    },
+  })
     .then((res) => {
-      console.log('invoice endpoint');
-      console.log(res.data);
+      return res.json();
+    })
+    .then((data) => {
+      console.log(data);
+      return data;
     })
     .catch((err) => {
-      console.error(err);
+      console.error('Fetch error:', err);
+      throw err;
     });
-};
+}
 
 export default getInvoices;

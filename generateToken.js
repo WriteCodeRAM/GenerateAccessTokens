@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 // Replace base with your API access token endpoint
 const base = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
 
@@ -7,15 +5,25 @@ const base = 'https://api-m.sandbox.paypal.com/v1/oauth2/token';
 export default async function generateAccessToken() {
   let accessToken = '';
   try {
-    const response = await axios.post(base, 'grant_type=client_credentials', {
-      auth: {
-        username: process.env.CLIENT_ID,
-        password: process.env.CLIENT_SECRET,
+    const response = await fetch(base, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Authorization: `Basic ${btoa(
+          `${process.env.CLIENT_ID}:${process.env.CLIENT_SECRET}`
+        )}`,
       },
+      body: 'grant_type=client_credentials',
     });
 
-    // Store the access token
-    accessToken = response.data.access_token;
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    // save the access token
+    accessToken = data.access_token;
     console.log(`Token generated: ${accessToken}`);
     return accessToken;
   } catch (error) {
